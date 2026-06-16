@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedCalc & Suporte Clínico</title>
+    <style>
+        /* --- DESIGN SYSTEM & TOKENS --- */
+        :root {
+            --primary: #0284c7;       /* Azul Hospitalar Principal */
+            --primary-hover: #0369a1;
+            --bg-page: #f8fafc;       /* Cinza claro clínico */
+            --bg-card: #ffffff;
+            --text-main: #1e293b;     /* Alta legibilidade */
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            
+            /* Cores de Alerta/Status (Acessíveis) */
+            --success: #15803d;
+            --success-bg: #f0fdf4;
+            --warning: #b45309;
+            --warning-bg: #fffbeb;
+            --danger: #b91c1c;
+            --danger-bg: #fef2f2;
+            
+            --radius: 12px;
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding-bottom: 40px;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 16px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* --- CONTAINER PRINCIPAL --- */
+        main {
+            max-width: 480px; /* Otimizado para Mobile-First */
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* --- NAVEGAÇÃO POR ABAS (UX) --- */
+        .tabs {
+            display: flex;
+            background-color: #f1f5f9;
+            padding: 4px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 12px 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: calc(var(--radius) - 2px);
+            transition: var(--transition);
+        }
+
+        .tab-btn.active {
+            background-color: var(--bg-card);
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* --- CARDS DE CONTEÚDO --- */
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- FORMULÁRIOS & INPUTS --- */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .input-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: -4px;
+            margin-bottom: 6px;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background-color: #fff;
+            color: var(--text-main);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        input[type="number"]:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+
+        /* --- RESULTADOS & OUTPUTS --- */
+        .result-card {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            display: none; /* Gatilho via JS */
+        }
+
+        .result-card.show {
+            display: block;
+        }
+
+        /* Variações de Status do Card */
+        .status-success { background-color: var(--success-bg); border-left: 4px solid var(--success); color: var(--success); }
+        .status-warning { background-color: var(--warning-bg); border-left: 4px solid var(--warning); color: var(--warning); }
+        .status-danger { background-color: var(--danger-bg); border-left: 4px solid var(--danger); color: var(--danger); }
+
+        .result-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .result-list {
+            padding-left: 20px;
+            margin-top: 8px;
+        }
+
+        .result-list li {
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        /* Destaque numérico para dosagem */
+        .dosage-badge {
+            display: inline-block;
+            background: rgba(2, 132, 199, 0.1);
+            color: var(--primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        /* Disclaimer de Segurança */
+        .disclaimer {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 12px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            padding-top: 8px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🩺 Portal de Suporte Clínico</h1>
+    </header>
+
+    <main>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'calc-dose')">Dose Infantil</button>
+            <button class="tab-btn" onclick="switchTab(event, 'guia-anticoncepcional')">Esquecimento Pílula</button>
+        </div>
+
+        <section id="calc-dose" class="panel active">
+            <div class="form-group">
+                <label for="peso">Peso da Criança (kg)</label>
+                <input type="number" id="peso" placeholder="Ex: 12.5" step="0.1" min="0" oninput="calcularDose()">
+            </div>
+
+            <div class="form-group">
+                <label for="concentracao">Concentração do Frasco (mg/mL)</label>
+                <div class="input-desc">Exemplos comuns: Paracetamol é 200, Ibuprofeno é 50 ou 100.</div>
+                <input type="number" id="concentracao" placeholder="Ex: 100" min="0.1" oninput="calcularDose()">
+            </div>
+
+            <div class="form-group">
+                <label for="dose-rec">Dose Recomendada (mg/kg)</label>
+                <div class="input-desc">Conforme orientação médica ou bula (Ex: 15 mg/kg).</div>
+                <input type="number" id="dose-rec" placeholder="Ex: 15" min="0" oninput="calcularDose()">
+            </div>
+
+            <div id="resultado-dose" class="result-card status-success">
+                <div class="result-title">Resultado do Cálculo</div>
+                <div class="result-list">
+                    <p style="margin-bottom: 8px;">Dose total calculada: <strong id="out-mg">0</strong> mg</p>
+                    <p>Volume exato a administrar:</p>
+                    <ul>
+                        <li><span class="dosage-badge" id="out-ml">0 mL</span></li>
+                        <li><span class="dosage-badge" id="out-gotas">0 gotas</span> (Equivalente)</li>
+                    </ul>
+                </div>
+                <div class="disclaimer">
+                    ⚠️ Atenção: Este cálculo é uma ferramenta de apoio. Nunca administre medicamentos sem antes validar a dose e o intervalo com o pediatra ou farmacêutico. Padrão adotado: 1 mL = 20 gotas.
+                </div>
+            </div>
+        </section>
+
+        <section id="guia-anticoncepcional" class="panel">
+            <div class="form-group">
+                <label for="tipo-pilula">Tipo de Pílula</label>
+                <select id="tipo-pilula" onchange="processarEsquecimento()">
+                    <option value="combinada">Combinada Comum (21, 24 ou 28 comprimidos)</option>
+                    <option value="minipilula">Minipílula / Progestogênio Isolado</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="tempo-atraso">Tempo de atraso do comprimido</label>
+                <select id="tempo-atraso" onchange="processarEsquecimento()">
+                    <option value="menos12">Menos de 12 horas</option>
+                    <option value="mais12">Mais de 12 horas</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="container-semana">
+                <label for="semana-cartela">Em qual semana da cartela ocorreu?</label>
+                <select id="semana-cartela" onchange="processarEsquecimento()">
+                    <option value="semana1">Semana 1 (Comprimidos 1 a 7)</option>
+                    <option value="semana2">Semana 2 (Comprimidos 8 a 14)</option>
+                    <option value="semana3">Semana 3 (Comprimidos 15 a 21)</option>
+                </select>
+            </div>
+
+            <div id="resultado-pilula" class="result-card show">
+                </div>
+        </section>
+    </main>
+
+    <script>
+        /* --- LÓGICA DE NAVEGAÇÃO (TABS) --- */
+        function switchTab(event, tabId) {
+            // Remove classe ativa de todos os botões e painéis
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+            
+            // Ativa a aba clicada e o respectivo painel
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        /* --- LOGICA MATEMÁTICA: DOSAGEM INFANTIL --- */
+        function calcularDose() {
+            const peso = parseFloat(document.getElementById('peso').value);
+            const concentracao = parseFloat(document.getElementById('concentracao').value);
+            const doseRec = parseFloat(document.getElementById('dose-rec').value);
+            const cardResultado = document.getElementById('resultado-dose');
+
+            // Validação de segurança básica para evitar divisões por zero ou resultados incoerentes
+            if (!peso || !concentracao || !doseRec || peso <= 0 || concentracao <= 0 || doseRec <= 0) {
+                cardResultado.classList.remove('show');
+                return;
+            }
+
+            // Execução dos cálculos lineares clínicos
+            const doseTotalMg = peso * doseRec;                          // Dose Absoluta em mg
+            const volumeMl = parseFloat((doseTotalMg / concentracao).toFixed(2)); // Volume necessário em mL
+            const totalGotas = Math.round(volumeMl * 20);                // Conversão padrão (1mL = 20 gotas)
+
+            // Renderização no DOM
+            document.getElementById('out-mg').innerText = doseTotalMg.toLocaleString('pt-BR');
+            document.getElementById('out-ml').innerText = `${volumeMl.toLocaleString('pt-BR')} mL`;
+            document.getElementById('out-gotas').innerText = `${totalGotas} gotas`;
+
+            cardResultado.classList.add('show');
+        }
+
+        /* --- LÓGICA DE TRIAGEM CLÍNICA: ANTICONCEPCIONAL (OMS) --- */
+        function processarEsquecimento() {
+            const tipoPilula = document.getElementById('tipo-pilula').value;
+            const tempoAtraso = document.getElementById('tempo-atraso').value;
+            const semana = document.getElementById('semana-cartela').value;
+            const containerSemana = document.getElementById('container-semana');
+            const card = document.getElementById('resultado-pilula');
+
+            // UX Improvement: Se for minipílula, a semana é irrelevante pelo padrão da OMS
+            if (tipoPilula === 'minipilula') {
+                containerSemana.style.display = 'none';
+            } else {
+                containerSemana.style.display = 'block';
+            }
+
+            let classeStatus = '';
+            let HTMLConteudo = '';
+
+            // Fluxo Condicional Clínico baseado nos Critérios de Elegibilidade da OMS
+            if (tipoPilula === 'minipilula' || tempoAtraso === 'menos12') {
+                /* --- CENÁRIO A: Baixo Risco / Eficácia Mantida --- */
+                classeStatus = 'status-success';
+                HTMLConteudo = `
+                    <div class="result-title">🟢 Eficácia Mantida (Risco Baixo)</div>
+                    <p>A proteção anticoncepcional está preservada. Siga a conduta abaixo:</p>
+                    <ul class="result-list">
+                        <li><strong>Tome o comprimido esquecido imediatamente</strong>, mesmo que isso signifique tomar dois comprimidos no mesmo dia.</li>
+                        <li>Continue tomando os próximos comprimidos no horário habitual.</li>
+                        <li>Não é necessário utilizar método de barreira (camisinha) adicional.</li>
+                    </ul>
+                `;
+            } else {
+                /* --- CENÁRIO B: Atraso Superior a 12h em Pílula Combinada --- */
+                if (semana === 'semana1') {
+                    classeStatus = 'status-danger';
+                    HTMLConteudo = `
+                        <div class="result-title">🔴 Risco de Falha Elevado (Semana 1)</div>
+                        <p>A eficácia pode estar reduzida. Proceda da seguinte forma:</p>
+                        <ul class="result-list">
+                            <li><strong>Tome o último comprimido esquecido imediatamente.</strong></li>
+                            <li>Siga tomando o restante da cartela no horário usual.</li>
+                            <li><strong>Obrigatório:</strong> Use preservativo (camisinha) nas próximas 7 relações.</li>
+                            <li>⚠️ <strong>Atenção:</strong> Se você teve relações sexuais nos últimos 5 dias, há risco de gestação. Considere o uso de contracepção de emergência (pílula do dia seguinte).</li>
+                        </ul>
+                    `;
+                } else if (semana === 'semana2') {
+                    classeStatus = 'status-warning';
+                    HTMLConteudo = `
+                        <div class="result-title">🟡 Risco Moderado (Semana 2)</div>
+                        <p>A eficácia está minimamente afetada se os comprimidos anteriores foram tomados corretamente:</p>
+                        <ul class="result-list">
+                            <li><strong>Tome o comprimido esquecido imediatamente.</strong></li>
+                            <li>Continue terminando a cartela normalmente.</li>
+                            <li>Se você tomou todos os comprimidos nos 7 dias anteriores de forma regular, o risco é baixo e dispensa camisinha. Caso contrário, use proteção por 7 dias.</li>
+                        </ul>
+                    `;
+                } else if (semana === 'semana3') {
+                    classeStatus = 'status-danger';
+                    HTMLConteudo = `
+                        <div class="result-title">🟠 Risco de Falha (Semana 3)</div>
+                        <p>Para evitar a queda hormonal e ovulação, siga esta conduta estrita:</p>
+                        <ul class="result-list">
+                            <li><strong>Tome o comprimido esquecido imediatamente.</strong></li>
+                            <li>Siga tomando as pílulas ativas restantes até o fim desta cartela.</li>
+                            <li><strong>Não faça a pausa!</strong> Assim que acabar os comprimidos ativos desta cartela, comece a próxima cartela no dia seguinte.</li>
+                            <li>Você pode ter pequenos sangramentos de escape, mas a proteção será mantida caso emende as cartelas.</li>
+                        </ul>
+                    `;
+                }
+            }
+
+            // Injeção do layout limpo e aplicação das cores semânticas corretas
+            card.className = `result-card show ${classeStatus}`;
+            card.innerHTML = HTMLConteudo + `<div class="disclaimer">Este guia é educativo e baseado em diretrizes da OMS. Em caso de dúvidas severas, procure seu ginecologista ou o balcão da farmácia.</div>`;
+        }
+
+        // Executa a inicialização para renderizar o estado default da aba 2
+        window.onload = function() {
+            processarEsquecimento();
+        };
+    </script>
+</body>
+</html>
